@@ -40,5 +40,8 @@
     "typescript": "^5.8.2",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1"
-  }
+  },
+  "publisher": "charvalton",
+  "license": "MIT",
+  "icon": "icon.png"
 }

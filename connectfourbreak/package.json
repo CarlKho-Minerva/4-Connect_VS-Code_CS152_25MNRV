@@ -2,7 +2,7 @@
   "name": "connectfourbreak",
   "displayName": "ConnectFourBreak",
   "description": "Play ASCII Connect Four while waiting for GitHub Copilot to finish your code. ",
-  "version": "0.0.1",
+  "version": "1.0.1",
   "engines": {
     "vscode": "^1.99.0"
   },

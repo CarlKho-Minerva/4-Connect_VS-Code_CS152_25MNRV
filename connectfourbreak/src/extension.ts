@@ -73,7 +73,7 @@ export function activate(context: vscode.ExtensionContext) {
          // Handle messages from the webview
          gamePanel.webview.onDidReceiveMessage(
             message => {
-                if (gameOver && message.command !== 'getInitialBoard') return; // Ignore moves if game is over, unless it's a reset request
+                if (gameOver && message.command !== 'getInitialBoard') {return;} // Ignore moves if game is over, unless it's a reset request
 
                 switch (message.command) {
                     case 'getInitialBoard':
@@ -107,7 +107,7 @@ export function activate(context: vscode.ExtensionContext) {
                                 // --- Call AI function here ---
                                  // Simulate AI thinking delay then make move
                                 setTimeout(() => {
-                                    if (gameOver) return; // Check again in case player closed panel during timeout
+                                    if (gameOver) {return;} // Check again in case player closed panel during timeout
                                     console.log("AI Thinking...");
                                     const aiCol = makeAiMove(currentBoard); // Implement this in Phase 5
 
@@ -312,8 +312,8 @@ function minimax(board: Board, depth: number, alpha: number, beta: number, maxim
 
     if (depth === 0 || isTerminal) {
         if (isTerminal) {
-            if (checkWin(board, AI_PIECE)) return [null, 1000000 + depth]; // Win faster is better
-            if (checkWin(board, PLAYER_PIECE)) return [null, -1000000 - depth]; // Lose slower is better
+            if (checkWin(board, AI_PIECE)) {return [null, 1000000 + depth];} // Win faster is better
+            if (checkWin(board, PLAYER_PIECE)) {return [null, -1000000 - depth];} // Lose slower is better
             return [null, 0]; // Draw
         } else { // Depth is zero, use heuristic
             return [null, scorePosition(board, AI_PIECE)];

@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "ChatGPT Connect Four Break",
+  "version": "0.1.0",
+  "description": "Play Connect Four in a modal on ChatGPT while waiting for responses.",
+  "permissions": [
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://chat.openai.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://chat.openai.com/*"],
+      "js": ["content.js"],
+      "css": ["modal.css"]
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["modal.html", "gameLogic.js", "aiLogic.js", "modal.js"],
+      "matches": ["https://chat.openai.com/*"]
+    }
+  ],
+  "action": {
+    "default_title": "ChatGPT Connect Four Break Info",
+    "default_popup": "popup.html"
+  },
+  "icons": {
+    // "16": "icons/icon16.png",
+    // "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

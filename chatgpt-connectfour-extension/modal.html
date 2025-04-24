@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect Four Game</title>
+    <link rel="stylesheet" href="modal.css">
+</head>
+<body>
+    <h1>Connect Four Break!</h1>
+    <div class="board" id="board">
+        <!-- ASCII Board will be rendered here by JavaScript -->
+        Loading board...
+    </div>
+    <div class="input-area" id="input-area">
+        <!-- Column buttons will be added here by JavaScript -->
+    </div>
+    <div id="status">Loading game...</div>
+
+    <!-- Load game logic first, then AI, then the modal interaction script -->
+    <script src="gameLogic.js"></script>
+    <script src="aiLogic.js"></script>
+    <script src="modal.js"></script>
+</body>
+</html>

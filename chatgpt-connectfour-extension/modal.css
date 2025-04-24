@@ -1,0 +1,89 @@
+/* Basic styling for ASCII display within the modal iframe */
+body {
+    font-family: monospace, sans-serif; /* Monospace for board, sans-serif fallback */
+    white-space: pre;
+    line-height: 1.2; /* Slightly more spacing */
+    padding: 15px;
+    margin: 0; /* Remove default body margin */
+    background-color: #ffffff; /* Simple white background */
+    color: #333333; /* Dark grey text */
+    text-align: center; /* Center content */
+    overflow: hidden; /* Prevent scrollbars if content fits */
+}
+
+h1 {
+     margin-top: 5px;
+     margin-bottom: 10px;
+     font-size: 1.4em;
+     color: #007acc; /* A blue color for the title */
+}
+
+.board {
+    margin: 10px auto; /* Center board */
+    display: inline-block; /* Fit content */
+    border: 1px solid #cccccc; /* Light grey border */
+    padding: 5px;
+    background-color: #f0f0f0; /* Slightly different background */
+    line-height: 1.1; /* Tighten board line height slightly */
+}
+
+.row {
+     display: block; /* Ensure rows are block elements */
+     height: 1.2em; /* Consistent row height */
+}
+
+.cell-empty, .cell-player1, .cell-player2 {
+    display: inline-block;
+    width: 1.6em; /* Ensure cells align - adjust as needed */
+    text-align: center;
+    font-size: 1.2em; /* Make pieces slightly larger */
+    font-weight: bold;
+}
+
+.cell-empty { color: #bbbbbb; font-weight: normal; } /* Lighter grey for empty */
+.cell-player1 { color: #d9534f; } /* Reddish for player 1 (X) */
+.cell-player2 { color: #f0ad4e; } /* Orangey for player 2 (O) */
+
+.input-area {
+    text-align: center;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.input-area button {
+    font-family: sans-serif; /* Standard font for buttons */
+    font-size: 1em;
+    margin: 0 3px;
+    cursor: pointer;
+    padding: 6px 12px;
+    min-width: 2.5em; /* Ensure buttons have minimum width */
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    background-color: #e7e7e7;
+    color: #333333;
+}
+
+ .input-area button:hover:not(:disabled) {
+     background-color: #d4d4d4;
+ }
+
+ .input-area button:disabled {
+     cursor: not-allowed;
+     opacity: 0.6;
+     background-color: #eeeeee;
+ }
+
+#status {
+    margin-top: 10px;
+    font-weight: bold;
+    text-align: center;
+    font-size: 1.1em;
+    min-height: 1.5em; /* Prevent layout shift */
+    color: #333333;
+}
+
+/* Status message styling */
+#status.win { color: green; }
+#status.lose { color: red; }
+#status.draw { color: orange; }
+#status.thinking { color: #555555; font-style: italic; }

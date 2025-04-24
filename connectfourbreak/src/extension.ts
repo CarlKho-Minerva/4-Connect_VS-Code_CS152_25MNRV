@@ -18,144 +18,215 @@ let currentBoard: Board = createBoard();
 let currentPlayer = PLAYER_PIECE; // Player starts
 let gameOver = false;
 
+let copilotCheckerInterval: NodeJS.Timeout | undefined;
+let copilotWasOpen = false;
 
 export function activate(context: vscode.ExtensionContext) {
-
     console.log('Congratulations, your extension "ConnectFourBreak" is now active!');
 
+    // Register the main command
     let startGameCommand = vscode.commands.registerCommand('connectfour.startGame', () => {
-        const columnToShow = vscode.window.activeTextEditor
-            ? vscode.window.activeTextEditor.viewColumn
-            : undefined;
+        showGamePanel(context);
+    });
+    context.subscriptions.push(startGameCommand);
 
-        // If we already have a panel, show it.
-        if (gamePanel) {
-            gamePanel.reveal(columnToShow);
-             // Reset game state if revealing an existing panel for a fresh start
+    // Register the sidebar view provider
+    const provider = new ConnectFourSidebarProvider(context);
+    context.subscriptions.push(
+        vscode.window.registerWebviewViewProvider('connectfourbreak-view', provider)
+    );
+
+    // Auto-open the game panel on startup
+    if (vscode.extensions.getExtension('charvalton.connectfourbreak')) {
+        setTimeout(() => {
+            showGamePanel(context);
+        }, 1000);
+    }
+
+    // Start polling for Copilot Chat activity
+    copilotCheckerInterval = setInterval(() => {
+        // Workaround: check tab label for 'Copilot Chat'
+        const copilotChatVisible = vscode.window.tabGroups.all.some(group =>
+            group.tabs.some(tab => typeof tab.label === 'string' && tab.label.includes('Copilot Chat'))
+        );
+        if (copilotChatVisible && !copilotWasOpen) {
+            copilotWasOpen = true;
+            showGamePanel(context);
+        } else if (!copilotChatVisible && copilotWasOpen) {
+            copilotWasOpen = false;
+            if (gamePanel) {
+                gamePanel.dispose();
+            }
+        }
+    }, 1000); // Check every second
+}
+
+// Helper to show the game panel (single instance)
+function showGamePanel(context: vscode.ExtensionContext) {
+    const columnToShow = vscode.window.activeTextEditor
+        ? vscode.window.activeTextEditor.viewColumn
+        : undefined;
+    if (gamePanel) {
+        gamePanel.reveal(columnToShow);
+        currentBoard = createBoard();
+        currentPlayer = PLAYER_PIECE;
+        gameOver = false;
+        gamePanel.webview.postMessage({ command: 'updateBoard', board: currentBoard, status: 'Your turn (Player 1 - X)' });
+        return;
+    }
+    gamePanel = vscode.window.createWebviewPanel(
+        'connectFourGame',
+        'Connect Four Break',
+        vscode.ViewColumn.Beside,
+        {
+            enableScripts: true,
+            retainContextWhenHidden: true,
+        }
+    );
+    gamePanel.webview.html = getWebviewContent(context, gamePanel.webview);
+    gamePanel.onDidDispose(
+        () => {
+            gamePanel = undefined;
             currentBoard = createBoard();
             currentPlayer = PLAYER_PIECE;
             gameOver = false;
-            gamePanel.webview.postMessage({ command: 'updateBoard', board: currentBoard, status: 'Your turn (Player 1 - X)' });
-            return;
-        }
-
-        // Otherwise, create a new panel.
-        gamePanel = vscode.window.createWebviewPanel(
-            'connectFourGame', // Identifies the type of the webview. Used internally
-            'Connect Four Break', // Title of the panel displayed to the user
-            vscode.ViewColumn.Beside, // Show it beside the current editor
-            {
-                // Enable javascript in the webview
-                enableScripts: true,
-                // Retain context even when hidden
-                retainContextWhenHidden: true, // Keep game state when panel is not visible
-                // Restrict the webview to only loading content from our extension's `media` directory.
-                // localResourceRoots: [vscode.Uri.joinPath(context.extensionUri, 'media')] // Good practice, but we'll add media later
+        },
+        null,
+        []
+    );
+    gamePanel.webview.onDidReceiveMessage(
+        message => {
+            if (gameOver && message.command !== 'getInitialBoard') {return;}
+            switch (message.command) {
+                case 'getInitialBoard':
+                    currentBoard = createBoard();
+                    currentPlayer = PLAYER_PIECE;
+                    gameOver = false;
+                    gamePanel?.webview.postMessage({ command: 'updateBoard', board: currentBoard, status: 'Your turn (Player 1 - X)' });
+                    break;
+                case 'playerMove':
+                    if (currentPlayer === PLAYER_PIECE) {
+                        if (dropPiece(currentBoard, message.column, PLAYER_PIECE)) {
+                            if (checkWin(currentBoard, PLAYER_PIECE)) {
+                                gameOver = true;
+                                gamePanel?.webview.postMessage({ command: 'gameOver', board: currentBoard, status: 'You Win!' });
+                                return;
+                            }
+                            if (isBoardFull(currentBoard)) {
+                                gameOver = true;
+                                gamePanel?.webview.postMessage({ command: 'gameOver', board: currentBoard, status: 'Draw!' });
+                                return;
+                            }
+                            currentPlayer = AI_PIECE;
+                            gamePanel?.webview.postMessage({ command: 'updateBoard', board: currentBoard, status: "AI's turn (thinking...)" });
+                            setTimeout(() => {
+                                if (gameOver) {return;}
+                                const aiCol = makeAiMove(currentBoard);
+                                if (aiCol !== null && dropPiece(currentBoard, aiCol, AI_PIECE)) {
+                                    if (checkWin(currentBoard, AI_PIECE)) {
+                                        gameOver = true;
+                                        gamePanel?.webview.postMessage({ command: 'gameOver', board: currentBoard, status: 'AI Wins!' });
+                                        return;
+                                    }
+                                    if (isBoardFull(currentBoard)) {
+                                        gameOver = true;
+                                        gamePanel?.webview.postMessage({ command: 'gameOver', board: currentBoard, status: 'Draw!' });
+                                        return;
+                                    }
+                                    currentPlayer = PLAYER_PIECE;
+                                    gamePanel?.webview.postMessage({ command: 'updateBoard', board: currentBoard, status: 'Your turn (Player 1 - X)' });
+                                } else {
+                                    currentPlayer = PLAYER_PIECE;
+                                    gamePanel?.webview.postMessage({ command: 'updateBoard', board: currentBoard, status: 'AI error! Your turn.' });
+                                }
+                            }, 500);
+                        } else {
+                            gamePanel?.webview.postMessage({ command: 'updateBoard', board: currentBoard, status: 'Invalid move! Column might be full. Your turn.' });
+                        }
+                    }
+                    return;
             }
-        );
+        },
+        undefined,
+        []
+    );
+    gamePanel?.webview.postMessage({ command: 'updateBoard', board: currentBoard, status: 'Your turn (Player 1 - X)' });
+}
 
-        // Set the webview's initial HTML content
-        gamePanel.webview.html = getWebviewContent(context, gamePanel.webview);
-
-        // Reset panel tracking and game state when it's closed
-        gamePanel.onDidDispose(
-            () => {
-                gamePanel = undefined;
-                // Reset game state variables if needed when panel is closed
-                currentBoard = createBoard();
-                currentPlayer = PLAYER_PIECE;
-                gameOver = false;
-            },
-            null,
-            context.subscriptions
-        );
-
-         // Handle messages from the webview
-         gamePanel.webview.onDidReceiveMessage(
+// Sidebar provider for the custom view
+class ConnectFourSidebarProvider implements vscode.WebviewViewProvider {
+    private _context: vscode.ExtensionContext;
+    private _view?: vscode.WebviewView;
+    constructor(context: vscode.ExtensionContext) {
+        this._context = context;
+    }
+    resolveWebviewView(webviewView: vscode.WebviewView) {
+        console.log("ConnectFourSidebarProvider: resolveWebviewView called!"); // Add log message
+        this._view = webviewView;
+        webviewView.webview.options = { enableScripts: true };
+        webviewView.webview.html = getWebviewContent(this._context, webviewView.webview);
+        // Handle messages from the sidebar webview
+        webviewView.webview.onDidReceiveMessage(
             message => {
-                if (gameOver && message.command !== 'getInitialBoard') {return;} // Ignore moves if game is over, unless it's a reset request
-
+                if (gameOver && message.command !== 'getInitialBoard') {return;}
                 switch (message.command) {
                     case 'getInitialBoard':
-                        currentBoard = createBoard(); // Reset board
+                        currentBoard = createBoard();
                         currentPlayer = PLAYER_PIECE;
                         gameOver = false;
-                        gamePanel?.webview.postMessage({ command: 'updateBoard', board: currentBoard, status: 'Your turn (Player 1 - X)' });
+                        webviewView.webview.postMessage({ command: 'updateBoard', board: currentBoard, status: 'Your turn (Player 1 - X)' });
                         break;
-
                     case 'playerMove':
                         if (currentPlayer === PLAYER_PIECE) {
-                            console.log('Player wants to move to column:', message.column);
                             if (dropPiece(currentBoard, message.column, PLAYER_PIECE)) {
                                 if (checkWin(currentBoard, PLAYER_PIECE)) {
-                                    console.log("PLAYER WINS");
                                     gameOver = true;
-                                    gamePanel?.webview.postMessage({ command: 'gameOver', board: currentBoard, status: 'You Win!' });
+                                    webviewView.webview.postMessage({ command: 'gameOver', board: currentBoard, status: 'You Win!' });
                                     return;
                                 }
                                 if (isBoardFull(currentBoard)) {
-                                    console.log("DRAW");
                                     gameOver = true;
-                                    gamePanel?.webview.postMessage({ command: 'gameOver', board: currentBoard, status: 'Draw!' });
+                                    webviewView.webview.postMessage({ command: 'gameOver', board: currentBoard, status: 'Draw!' });
                                     return;
                                 }
-
-                                // Switch to AI's turn
                                 currentPlayer = AI_PIECE;
-                                gamePanel?.webview.postMessage({ command: 'updateBoard', board: currentBoard, status: "AI's turn (thinking...)" });
-
-                                // --- Call AI function here ---
-                                 // Simulate AI thinking delay then make move
+                                webviewView.webview.postMessage({ command: 'updateBoard', board: currentBoard, status: "AI's turn (thinking...)" });
                                 setTimeout(() => {
-                                    if (gameOver) {return;} // Check again in case player closed panel during timeout
-                                    console.log("AI Thinking...");
-                                    const aiCol = makeAiMove(currentBoard); // Implement this in Phase 5
-
+                                    if (gameOver) {return;}
+                                    const aiCol = makeAiMove(currentBoard);
                                     if (aiCol !== null && dropPiece(currentBoard, aiCol, AI_PIECE)) {
                                         if (checkWin(currentBoard, AI_PIECE)) {
-                                            console.log("AI WINS");
                                             gameOver = true;
-                                            gamePanel?.webview.postMessage({ command: 'gameOver', board: currentBoard, status: 'AI Wins!' });
+                                            webviewView.webview.postMessage({ command: 'gameOver', board: currentBoard, status: 'AI Wins!' });
                                             return;
                                         }
-                                         if (isBoardFull(currentBoard)) {
-                                            console.log("DRAW");
+                                        if (isBoardFull(currentBoard)) {
                                             gameOver = true;
-                                            gamePanel?.webview.postMessage({ command: 'gameOver', board: currentBoard, status: 'Draw!' });
+                                            webviewView.webview.postMessage({ command: 'gameOver', board: currentBoard, status: 'Draw!' });
                                             return;
                                         }
-                                        // Switch back to Player's turn
                                         currentPlayer = PLAYER_PIECE;
-                                        gamePanel?.webview.postMessage({ command: 'updateBoard', board: currentBoard, status: 'Your turn (Player 1 - X)' });
-
+                                        webviewView.webview.postMessage({ command: 'updateBoard', board: currentBoard, status: 'Your turn (Player 1 - X)' });
                                     } else {
-                                         console.error("AI failed to make a valid move or returned null. AI recommended col:", aiCol);
-                                          // Handle error - switch back to player
-                                         currentPlayer = PLAYER_PIECE;
-                                         gamePanel?.webview.postMessage({ command: 'updateBoard', board: currentBoard, status: 'AI error! Your turn.' });
+                                        currentPlayer = PLAYER_PIECE;
+                                        webviewView.webview.postMessage({ command: 'updateBoard', board: currentBoard, status: 'AI error! Your turn.' });
                                     }
-                                }, 500); // 500ms delay for realism
-
+                                }, 500);
                             } else {
-                                // Invalid move
-                                console.log("Invalid player move attempted.");
-                                 gamePanel?.webview.postMessage({ command: 'updateBoard', board: currentBoard, status: 'Invalid move! Column might be full. Your turn.' });
+                                webviewView.webview.postMessage({ command: 'updateBoard', board: currentBoard, status: 'Invalid move! Column might be full. Your turn.' });
                             }
                         }
                         return;
                 }
             },
             undefined,
-            context.subscriptions
-          );
-
-        // Send initial state when panel is first created (or revealed and reset)
-        gamePanel?.webview.postMessage({ command: 'updateBoard', board: currentBoard, status: 'Your turn (Player 1 - X)' });
-
-    });
-
-    context.subscriptions.push(startGameCommand);
+            []
+        );
+        // Send initial board state
+        webviewView.webview.postMessage({ command: 'updateBoard', board: currentBoard, status: 'Your turn (Player 1 - X)' });
+    }
 }
+
 
 // --- Game Logic Functions ---
 
@@ -590,4 +661,8 @@ function getWebviewContent(context: vscode.ExtensionContext, webview: vscode.Web
 
 
 // This function is called when your extension is deactivated
-export function deactivate() {}
+export function deactivate() {
+    if (copilotCheckerInterval) {
+        clearInterval(copilotCheckerInterval);
+    }
+}

@@ -10,7 +10,9 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:connectfour.startGame"
+    "onCommand:connectfour.startGame",
+    "onStartupFinished",
+    "onView:connectfourbreak-view"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -20,7 +22,24 @@
         "title": "Connect Four: Start Game Break",
         "category": "Games"
       }
-    ]
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "connectfourbreak-activitybar",
+          "title": "Connect Four",
+          "icon": "icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "connectfourbreak-activitybar": [
+        {
+          "id": "connectfourbreak-view",
+          "name": "Connect Four Game"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
@@ -47,5 +66,5 @@
   },
   "publisher": "charvalton",
   "license": "MIT",
-  "icon": "icon.png"
+  "icon": "icon.svg"
 }

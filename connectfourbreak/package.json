@@ -10,7 +10,8 @@
     "Other"
   ],
   "activationEvents": [
-    "onCommand:connectfour.startGame"
+    "onCommand:connectfour.startGame",
+    "onView:connectfourbreakView"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -20,7 +21,24 @@
         "title": "Connect Four: Start Game Break",
         "category": "Games"
       }
-    ]
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "connectfourbreak-sidebar",
+          "title": "Connect Four",
+          "icon": "icon.png"
+        }
+      ]
+    },
+    "views": {
+      "connectfourbreak-sidebar": [
+        {
+          "id": "connectfourbreakView",
+          "name": "Connect Four Game"
+        }
+      ]
+    }
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",

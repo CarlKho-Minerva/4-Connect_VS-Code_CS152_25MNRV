@@ -117,25 +117,35 @@ function handleClickOutside(event) {
 
 // --- Observer for Streaming Button --- //
 
+let isStreaming = false; // Track streaming state
+
 const streamingObserverTargetNode = document.body;
 const streamingObserverConfig = { childList: true, subtree: true };
 
 const streamingCallback = function(mutationsList, observer) {
-    for(const mutation of mutationsList) {
-        if (mutation.type === 'childList') {
-            // Check if the "Stop streaming" button appeared
-            const stopButton = document.querySelector('button[aria-label="Stop streaming"]');
-            if (stopButton) {
-                console.log('Detected streaming start.');
-                showModal();
-                // Maybe disconnect observer once found if only needed once per stream?
-                // observer.disconnect();
-            }
+    let streamingButtonNowPresent = false;
 
-            // Optional: Check if the button disappeared (streaming stopped)
-            // This requires tracking the button's state or observing its removal
-        }
+    // Check if the streaming button exists in the current DOM state after mutations
+    const stopButton = document.querySelector('button[aria-label="Stop streaming"]');
+    if (stopButton) {
+        streamingButtonNowPresent = true;
     }
+
+    if (streamingButtonNowPresent && !isStreaming) {
+        // Streaming just started
+        console.log('Detected streaming start.');
+        isStreaming = true;
+        showModal();
+    } else if (!streamingButtonNowPresent && isStreaming) {
+        // Streaming just ended (button was there, now it's gone)
+        console.log('Detected streaming end.');
+        isStreaming = false;
+        hideModal();
+        // Optional: Check for Regenerate button as confirmation, though disappearance should be enough
+    }
+
+    // Update the state for the next mutation check
+    // isStreaming = streamingButtonNowPresent; // This line was incorrect, state is managed above
 };
 
 const streamingObserver = new MutationObserver(streamingCallback);

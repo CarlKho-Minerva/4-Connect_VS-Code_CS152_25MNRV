@@ -62,36 +62,9 @@ function showModal() {
             closeButton.style.color = '#bdbdbd';
         };
 
-        // Create "Don't show again" toggle/button
-        const dontShowToggleContainer = document.createElement('div');
-        dontShowToggleContainer.style.position = 'absolute';
-        dontShowToggleContainer.style.bottom = '10px';
-        dontShowToggleContainer.style.left = '10px';
-        dontShowToggleContainer.style.fontSize = '0.8em';
-        dontShowToggleContainer.style.color = '#bdbdbd'; /* Lighter color for visibility */
-
-        const dontShowCheckbox = document.createElement('input');
-        dontShowCheckbox.type = 'checkbox';
-        dontShowCheckbox.id = 'dontShowConnectFour';
-        dontShowCheckbox.checked = dontShowAgain;
-        dontShowCheckbox.onchange = (e) => {
-            dontShowAgain = e.target.checked;
-            console.log('Dont show again set to:', dontShowAgain);
-            // Optionally save this preference to chrome.storage.local for persistence
-        };
-
-        const dontShowLabel = document.createElement('label');
-        dontShowLabel.htmlFor = 'dontShowConnectFour';
-        dontShowLabel.textContent = ' Don\'t show automatically this session';
-        dontShowLabel.style.cursor = 'pointer';
-
-        dontShowToggleContainer.appendChild(dontShowCheckbox);
-        dontShowToggleContainer.appendChild(dontShowLabel);
-
         // Append elements
         gameModal.appendChild(closeButton);
         gameModal.appendChild(iframe);
-        gameModal.appendChild(dontShowToggleContainer);
         document.body.appendChild(gameModal);
 
         // Add listener to close modal if clicked outside
@@ -165,24 +138,37 @@ console.log('MutationObserver started to watch for streaming button.');
 const observer = new MutationObserver(() => {
     const actionsArea = document.querySelector('div[data-testid="composer-footer-actions"]');
     if (actionsArea && !document.getElementById('manualConnectFourButton')) {
-        // Create the button
+        // Create the Play button
         const manualButton = document.createElement('button');
         manualButton.id = 'manualConnectFourButton';
         manualButton.textContent = 'Play';
         manualButton.title = 'Play Connect Four';
-        manualButton.style.padding = '0 8px';
+        manualButton.style.padding = '0 16px';
         manualButton.style.height = '36px';
-        manualButton.style.border = '1px solid #555555'; /* Match modal button border */
+        manualButton.style.border = '1px solid #555555';
         manualButton.style.borderRadius = '18px';
         manualButton.style.cursor = 'pointer';
-        manualButton.style.backgroundColor = '#303030'; /* Match modal button background */
-        manualButton.style.color = '#e0e0e0'; /* Match modal button text color */
+        manualButton.style.backgroundColor = dontShowAgain ? '#6C71FF' : '#303030'; // Blue if disabled for session
+        manualButton.style.color = '#e0e0e0';
         manualButton.style.fontSize = '13px';
         manualButton.style.display = 'inline-flex';
         manualButton.style.alignItems = 'center';
+        manualButton.style.transition = 'background 0.15s';
         manualButton.onclick = (event) => {
             event.stopPropagation();
-            showModal();
+            if (dontShowAgain) {
+                // Toggle back to enabled
+                dontShowAgain = false;
+                manualButton.style.backgroundColor = '#303030';
+            } else {
+                showModal();
+            }
+        };
+        // Add toggle for disabling modal pop-up for session
+        manualButton.oncontextmenu = (event) => {
+            event.preventDefault();
+            dontShowAgain = !dontShowAgain;
+            manualButton.style.backgroundColor = dontShowAgain ? '#6C71FF' : '#303030';
         };
         actionsArea.appendChild(manualButton);
         observer.disconnect(); // Stop observing once added

@@ -1,7 +1,8 @@
 # ChatGPT Connect Four Break (Chrome Extension)
 
 
-![Connect Four Demo](https://github.com/cvkcode/chatgpt-connectfour-extension/blob/main/demo.mp4?raw=true)
+[![Connect Four Demo](4C_Thumbnail.jpg)](https://www.youtube.com/watch?v=sGJ0lAW8Q54)
+[View Connect4GPT Demo](https://www.youtube.com/watch?v=sGJ0lAW8Q54)
 
 Play Connect Four in a beautiful, modern modal while waiting for ChatGPT responses! This extension adds a seamless, keyboard-accessible Connect Four game to the ChatGPT interface, styled to match the ChatGPT brand.
 

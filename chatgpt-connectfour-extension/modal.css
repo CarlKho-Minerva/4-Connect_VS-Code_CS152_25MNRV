@@ -1,0 +1,105 @@
+/* Basic styling for ASCII display within the modal iframe */
+body {
+    /* font-family: monospace, sans-serif; */
+    white-space: pre;
+    line-height: 1.2;
+    padding: 15px;
+    margin: 0;
+    background-color: #212121; /* Dark background */
+    color: #e0e0e0; /* Light grey text */
+    /* text-align: center; */
+    overflow: hidden;
+}
+
+h1 {
+     margin-top: 5px;
+     margin-bottom: 10px;
+     font-size: 1.4em;
+     /* color: #64b5f6; Lighter blue for title on dark background */
+}
+
+.board {
+    margin: 10px auto;
+    display: inline-block;
+    border: 1px solid #424242; /* Darker border */
+    padding: 5px;
+    background-color: #303030; /* Slightly lighter dark background for board */
+    line-height: 1.1;
+}
+
+.row {
+     display: block; /* Ensure rows are block elements */
+     height: 1.2em; /* Consistent row height */
+}
+
+.cell-empty, .cell-player1, .cell-player2 {
+    display: inline-block;
+    width: 1.6em; /* Ensure cells align - adjust as needed */
+    text-align: center;
+    font-size: 1.2em; /* Make pieces slightly larger */
+    font-weight: bold;
+}
+
+.cell-empty { color: #616161; font-weight: normal; } /* Darker grey for empty */
+.cell-player1 { color: #e57373; } /* Lighter red for player 1 (X) */
+.cell-player2 { color: #ffb74d; } /* Lighter orange for player 2 (O) */
+
+.input-area {
+    text-align: center;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}
+
+.input-area button {
+    font-family: sans-serif; /* Standard font for buttons */
+    font-size: 1em;
+    margin: 0 3px;
+    cursor: pointer;
+    padding: 6px 12px;
+    min-width: 2.5em; /* Ensure buttons have minimum width */
+    border: 1px solid #555555;
+    border-radius: 4px;
+    background-color: #424242; /* Darker button background */
+    color: #e0e0e0; /* Light text on buttons */
+}
+
+ .input-area button:hover:not(:disabled) {
+     background-color: #515151; /* Slightly lighter on hover */
+ }
+
+ .input-area button:disabled {
+     cursor: not-allowed;
+     opacity: 0.5; /* Lower opacity for disabled */
+     background-color: #3a3a3a;
+     color: #757575;
+ }
+
+#status {
+    margin-top: 10px;
+    font-weight: bold;
+    text-align: center;
+    font-size: 1.1em;
+    min-height: 1.5em; /* Prevent layout shift */
+    color: #bdbdbd; /* Default status color */
+}
+
+/* Status message styling */
+#status.win { color: #81c784; } /* Lighter green */
+#status.lose { color: #e57373; } /* Lighter red */
+#status.draw { color: #ffb74d; } /* Lighter orange */
+#status.thinking { color: #9e9e9e; font-style: italic; } /* Lighter grey for thinking */
+
+#restartButton {
+    margin-top: 15px;
+    padding: 8px 15px;
+    font-size: 1em;
+    cursor: pointer;
+    border: 1px solid #555555;
+    border-radius: 4px;
+    background-color: #424242;
+    color: #e0e0e0;
+}
+
+#restartButton:hover {
+    background-color: #515151;
+}

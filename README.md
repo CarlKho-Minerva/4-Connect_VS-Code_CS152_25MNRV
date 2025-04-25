@@ -47,8 +47,3 @@ Play Connect Four in a beautiful, modern modal while waiting for ChatGPT respons
 
 ## License
 MIT
-
----
-
-### Want to publish?
-See below for Chrome Web Store upload instructions!

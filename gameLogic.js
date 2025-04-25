@@ -73,6 +73,3 @@ function checkWin(board, piece) {
 function isBoardFull(board) {
     return getValidLocations(board).length === 0;
 }
-
-// Note: No 'export' needed here as these will be used by aiLogic.js and modal.js
-// which will be included via <script> tags in modal.html

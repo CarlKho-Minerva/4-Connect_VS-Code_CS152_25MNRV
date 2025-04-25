@@ -28,9 +28,9 @@ function showModal() {
         gameModal.style.top = '50%';
         gameModal.style.transform = 'translate(-50%, -50%)';
         gameModal.style.zIndex = '10000'; // High z-index
-        gameModal.style.border = '1px solid #ccc';
-        gameModal.style.boxShadow = '0 4px 8px rgba(0,0,0,0.2)';
-        gameModal.style.backgroundColor = 'white'; // Or use theme variables if possible
+        gameModal.style.border = '1px solid #424242'; /* Darker border to match theme */
+        gameModal.style.boxShadow = '0 4px 15px rgba(0,0,0,0.3)'; /* Slightly adjusted shadow */
+        gameModal.style.backgroundColor = '#212121'; /* Match modal content background */
         gameModal.style.borderRadius = '8px';
         gameModal.style.overflow = 'hidden'; // Contain the iframe
 
@@ -51,7 +51,16 @@ function showModal() {
         closeButton.style.border = 'none';
         closeButton.style.fontSize = '1.2em';
         closeButton.style.cursor = 'pointer';
+        closeButton.style.color = '#bdbdbd'; /* Lighter color for visibility */
         closeButton.onclick = hideModal;
+
+        // Add close button hover effect
+        closeButton.onmouseover = function() {
+            closeButton.style.color = '#ffffff';
+        };
+        closeButton.onmouseout = function() {
+            closeButton.style.color = '#bdbdbd';
+        };
 
         // Create "Don't show again" toggle/button
         const dontShowToggleContainer = document.createElement('div');
@@ -59,7 +68,7 @@ function showModal() {
         dontShowToggleContainer.style.bottom = '10px';
         dontShowToggleContainer.style.left = '10px';
         dontShowToggleContainer.style.fontSize = '0.8em';
-        dontShowToggleContainer.style.color = '#555';
+        dontShowToggleContainer.style.color = '#bdbdbd'; /* Lighter color for visibility */
 
         const dontShowCheckbox = document.createElement('input');
         dontShowCheckbox.type = 'checkbox';
@@ -159,16 +168,15 @@ const observer = new MutationObserver(() => {
         // Create the button
         const manualButton = document.createElement('button');
         manualButton.id = 'manualConnectFourButton';
-        manualButton.textContent = 'C4';
+        manualButton.textContent = 'Play';
         manualButton.title = 'Play Connect Four';
-        manualButton.style.marginLeft = '4px';
         manualButton.style.padding = '0 8px';
         manualButton.style.height = '36px';
-        manualButton.style.border = '1px solid var(--token-border-light, #ccc)';
+        manualButton.style.border = '1px solid #555555'; /* Match modal button border */
         manualButton.style.borderRadius = '18px';
         manualButton.style.cursor = 'pointer';
-        manualButton.style.backgroundColor = 'transparent';
-        manualButton.style.color = 'var(--token-text-secondary, #555)';
+        manualButton.style.backgroundColor = '#303030'; /* Match modal button background */
+        manualButton.style.color = '#e0e0e0'; /* Match modal button text color */
         manualButton.style.fontSize = '13px';
         manualButton.style.display = 'inline-flex';
         manualButton.style.alignItems = 'center';

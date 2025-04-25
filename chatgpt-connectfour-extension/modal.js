@@ -42,7 +42,7 @@
 
     // Function to render input buttons
     function renderInputControls(board) {
-        inputDiv.innerHTML = 'Drop in column: '; // Reset input area
+        inputDiv.innerHTML = ''; // Reset input area
         for (let c = 0; c < COLS; c++) {
             const button = document.createElement('button');
             button.innerText = (c + 1).toString();

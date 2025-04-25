@@ -7,19 +7,18 @@
     <link rel="stylesheet" href="modal.css">
 </head>
 <body>
-    <h1>Connect Four Break!</h1>
-    <div class="board" id="board">
-        <!-- ASCII Board will be rendered here by JavaScript -->
-        Loading board...
+    <div class="modal-content">
+        <h1>Connect Four Break!</h1>
+        <div class="board" id="board">Loading board...</div>
+        <div class="input-area" id="input-area"></div>
+        <!-- <div class="input-label">Drop in column:</div> -->
+        <div id="status"></div>
+        <button id="restartButton">Restart Game</button>
+        <!-- <div class="dont-show-container">
+            <input type="checkbox" id="dontShowConnectFour">
+            <label for="dontShowConnectFour">Don't show automatically this session</label>
+        </div> -->
     </div>
-    <div class="input-area" id="input-area">
-        <!-- Column buttons will be added here by JavaScript -->
-    </div>
-    <div id="status"></div>
-    <div id="input-area"></div>
-    <button id="restartButton">Restart Game</button> <!-- Added Restart Button -->
-
-    <!-- Load game logic first, then AI, then the modal interaction script -->
     <script src="gameLogic.js"></script>
     <script src="aiLogic.js"></script>
     <script src="modal.js"></script>

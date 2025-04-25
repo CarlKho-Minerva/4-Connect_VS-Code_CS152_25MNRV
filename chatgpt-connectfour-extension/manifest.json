@@ -1,14 +1,15 @@
 {
   "manifest_version": 3,
-  "name": "ChatGPT Connect Four Break",
+  "name": "Connect Four: ChatGPT Entertainment",
   "version": "0.1.0",
-  "description": "Play Connect Four in a modal on ChatGPT while waiting for responses.",
+  "description": "Play Connect Four in a modal on ChatGPT while waiting for AI responses.",
   "permissions": [
     "storage",
     "scripting"
   ],
   "host_permissions": [
-    "https://chat.openai.com/*"
+    "https://chat.openai.com/*",
+    "https://chatgpt.com/*"
   ],
   "content_scripts": [
     {
@@ -26,7 +27,7 @@
         "aiLogic.js",
         "modal.js"
       ],
-      "matches": ["<all_urls>"] // Use <all_urls> for broader access
+      "matches": ["<all_urls>"]
     }
   ],
   "action": {

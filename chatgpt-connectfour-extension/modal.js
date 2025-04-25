@@ -11,6 +11,7 @@
     const boardDiv = document.getElementById('board');
     const inputDiv = document.getElementById('input-area');
     const statusDiv = document.getElementById('status');
+    const restartButton = document.getElementById('restartButton'); // Get restart button
 
     // Function to render the board
     function renderBoard(board) {
@@ -153,7 +154,11 @@
         gameOver = false;
         renderBoard(currentBoard);
         updateStatus('Your turn (Player 1 - X)');
+        // No need to call enableInput here, renderBoard calls renderInputControls which handles it
     }
+
+    // Add event listener for the restart button
+    restartButton.addEventListener('click', resetGame);
 
     // Listen for messages from the parent window (content script)
     window.addEventListener('message', event => {

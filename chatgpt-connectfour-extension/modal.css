@@ -87,3 +87,17 @@ h1 {
 #status.lose { color: red; }
 #status.draw { color: orange; }
 #status.thinking { color: #555555; font-style: italic; }
+
+#restartButton {
+    margin-top: 15px;
+    padding: 8px 15px;
+    font-size: 1em;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #f0f0f0;
+}
+
+#restartButton:hover {
+    background-color: #e0e0e0;
+}

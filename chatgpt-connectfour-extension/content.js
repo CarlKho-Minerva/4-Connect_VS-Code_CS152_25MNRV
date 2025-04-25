@@ -117,10 +117,10 @@ function handleClickOutside(event) {
 
 // --- Observer for Streaming Button --- //
 
-const targetNode = document.body; // Observe the whole body for simplicity, might need refinement
-const config = { childList: true, subtree: true };
+const streamingObserverTargetNode = document.body;
+const streamingObserverConfig = { childList: true, subtree: true };
 
-const callback = function(mutationsList, observer) {
+const streamingCallback = function(mutationsList, observer) {
     for(const mutation of mutationsList) {
         if (mutation.type === 'childList') {
             // Check if the "Stop streaming" button appeared
@@ -138,53 +138,45 @@ const callback = function(mutationsList, observer) {
     }
 };
 
-const observer = new MutationObserver(callback);
-
-// Start observing
-observer.observe(targetNode, config);
+const streamingObserver = new MutationObserver(streamingCallback);
+streamingObserver.observe(streamingObserverTargetNode, streamingObserverConfig);
 console.log('MutationObserver started to watch for streaming button.');
 
-// --- Manual Trigger Button (Placeholder) --- //
-
-function addManualTriggerButton() {
-    // Find the area near the send button (this selector might change with ChatGPT updates)
-    const sendButtonArea = document.querySelector('textarea[data-id="root"]')?.parentNode?.parentNode;
-
-    if (sendButtonArea && !document.getElementById('manualConnectFourButton')) {
-        console.log('Adding manual trigger button.');
+// Add a MutationObserver to wait for the composer-footer-actions div
+const observer = new MutationObserver(() => {
+    const actionsArea = document.querySelector('div[data-testid="composer-footer-actions"]');
+    if (actionsArea && !document.getElementById('manualConnectFourButton')) {
+        // Create the button
         const manualButton = document.createElement('button');
         manualButton.id = 'manualConnectFourButton';
-        manualButton.textContent = 'C4'; // Short text for the button
+        manualButton.textContent = 'C4';
         manualButton.title = 'Play Connect Four';
-        // Basic styling - adjust as needed to fit near the send button
-        manualButton.style.marginLeft = '8px';
-        manualButton.style.padding = '5px 10px';
-        manualButton.style.border = '1px solid #ccc';
-        manualButton.style.borderRadius = '4px';
+        manualButton.style.marginLeft = '4px';
+        manualButton.style.padding = '0 8px';
+        manualButton.style.height = '36px';
+        manualButton.style.border = '1px solid var(--token-border-light, #ccc)';
+        manualButton.style.borderRadius = '18px';
         manualButton.style.cursor = 'pointer';
-        manualButton.style.backgroundColor = '#f0f0f0';
-
+        manualButton.style.backgroundColor = 'transparent';
+        manualButton.style.color = 'var(--token-text-secondary, #555)';
+        manualButton.style.fontSize = '13px';
+        manualButton.style.display = 'inline-flex';
+        manualButton.style.alignItems = 'center';
         manualButton.onclick = (event) => {
-            event.stopPropagation(); // Prevent click outside listener from closing immediately
+            event.stopPropagation();
             showModal();
         };
-
-        // Try to insert it after the textarea or near the send button
-        sendButtonArea.appendChild(manualButton);
-    } else {
-        // Retry if the area isn't found yet
-        setTimeout(addManualTriggerButton, 1000);
+        actionsArea.appendChild(manualButton);
+        observer.disconnect(); // Stop observing once added
     }
-}
+});
+observer.observe(document.body, { childList: true, subtree: true });
 
-// Initial attempt to add the button
-addManualTriggerButton();
-
-// Clean up observer on unload (though content scripts usually run until page unload)
+// Clean up observers on unload
 window.addEventListener('unload', () => {
-    if (observer) {
-        observer.disconnect();
-        console.log('MutationObserver disconnected.');
+    if (streamingObserver) {
+        streamingObserver.disconnect();
+        console.log('Streaming MutationObserver disconnected.');
     }
     document.removeEventListener('click', handleClickOutside);
 });

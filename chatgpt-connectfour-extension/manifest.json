@@ -12,15 +12,21 @@
   ],
   "content_scripts": [
     {
-      "matches": ["https://chat.openai.com/*"],
+      "matches": ["https://chatgpt.com/*"],
       "js": ["content.js"],
       "css": ["modal.css"]
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["modal.html", "gameLogic.js", "aiLogic.js", "modal.js"],
-      "matches": ["https://chat.openai.com/*"]
+      "resources": [
+        "modal.html",
+        "modal.css",
+        "gameLogic.js",
+        "aiLogic.js",
+        "modal.js"
+      ],
+      "matches": ["<all_urls>"] // Use <all_urls> for broader access
     }
   ],
   "action": {

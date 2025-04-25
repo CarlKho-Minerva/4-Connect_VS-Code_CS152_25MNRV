@@ -62,36 +62,9 @@ function showModal() {
             closeButton.style.color = '#bdbdbd';
         };
 
-        // Create "Don't show again" toggle/button
-        const dontShowToggleContainer = document.createElement('div');
-        dontShowToggleContainer.style.position = 'absolute';
-        dontShowToggleContainer.style.bottom = '10px';
-        dontShowToggleContainer.style.left = '10px';
-        dontShowToggleContainer.style.fontSize = '0.8em';
-        dontShowToggleContainer.style.color = '#bdbdbd'; /* Lighter color for visibility */
-
-        const dontShowCheckbox = document.createElement('input');
-        dontShowCheckbox.type = 'checkbox';
-        dontShowCheckbox.id = 'dontShowConnectFour';
-        dontShowCheckbox.checked = dontShowAgain;
-        dontShowCheckbox.onchange = (e) => {
-            dontShowAgain = e.target.checked;
-            console.log('Dont show again set to:', dontShowAgain);
-            // Optionally save this preference to chrome.storage.local for persistence
-        };
-
-        const dontShowLabel = document.createElement('label');
-        dontShowLabel.htmlFor = 'dontShowConnectFour';
-        dontShowLabel.textContent = ' Don\'t show automatically this session';
-        dontShowLabel.style.cursor = 'pointer';
-
-        dontShowToggleContainer.appendChild(dontShowCheckbox);
-        dontShowToggleContainer.appendChild(dontShowLabel);
-
         // Append elements
         gameModal.appendChild(closeButton);
         gameModal.appendChild(iframe);
-        gameModal.appendChild(dontShowToggleContainer);
         document.body.appendChild(gameModal);
 
         // Add listener to close modal if clicked outside
@@ -165,24 +138,95 @@ console.log('MutationObserver started to watch for streaming button.');
 const observer = new MutationObserver(() => {
     const actionsArea = document.querySelector('div[data-testid="composer-footer-actions"]');
     if (actionsArea && !document.getElementById('manualConnectFourButton')) {
-        // Create the button
+        // Create the Play button
         const manualButton = document.createElement('button');
         manualButton.id = 'manualConnectFourButton';
         manualButton.textContent = 'Play';
-        manualButton.title = 'Play Connect Four';
-        manualButton.style.padding = '0 8px';
-        manualButton.style.height = '36px';
-        manualButton.style.border = '1px solid #555555'; /* Match modal button border */
-        manualButton.style.borderRadius = '18px';
-        manualButton.style.cursor = 'pointer';
-        manualButton.style.backgroundColor = '#303030'; /* Match modal button background */
-        manualButton.style.color = '#e0e0e0'; /* Match modal button text color */
+        manualButton.title = dontShowAgain
+            ? 'Disabled for this session (right-click to re-enable)'
+            : 'Play Connect Four (right-click to disable for this session)';
+        manualButton.style.border = '1.5px solid #444';
+        manualButton.style.borderRadius = '999px';
+        manualButton.style.backgroundColor = dontShowAgain ? '#6C71FF' : 'transparent';
+        manualButton.style.color = '#fff';
+        manualButton.style.fontWeight = '400';
         manualButton.style.fontSize = '13px';
+        manualButton.style.height = '36px';
+        manualButton.style.padding = '0 18px';
         manualButton.style.display = 'inline-flex';
         manualButton.style.alignItems = 'center';
+        manualButton.style.justifyContent = 'center';
+        manualButton.style.transition = 'background 0.15s, border 0.15s';
         manualButton.onclick = (event) => {
             event.stopPropagation();
-            showModal();
+            if (dontShowAgain) {
+                // Toggle back to enabled
+                dontShowAgain = false;
+                manualButton.style.backgroundColor = '#303030';
+                manualButton.title = 'Play Connect Four (right-click to disable for this session)';
+            } else {
+                showModal();
+            }
+        };
+        manualButton.oncontextmenu = (event) => {
+            event.preventDefault();
+            dontShowAgain = !dontShowAgain;
+            manualButton.style.backgroundColor = dontShowAgain ? '#6C71FF' : '#303030';
+            manualButton.title = dontShowAgain
+                ? 'Disabled for this session (right-click to re-enable)'
+                : 'Play Connect Four (right-click to disable for this session)';
+        };
+        // Custom tooltip
+        const tooltip = document.createElement('div');
+        tooltip.id = 'c4-tooltip';
+        tooltip.style.position = 'absolute';
+        tooltip.style.background = '#18181b';
+        tooltip.style.color = '#fff';
+        tooltip.style.fontWeight = '600';
+        tooltip.style.fontSize = '15px';
+        tooltip.style.padding = '10px 18px';
+        tooltip.style.borderRadius = '10px';
+        tooltip.style.boxShadow = '0 2px 8px rgba(0,0,0,0.18)';
+        tooltip.style.pointerEvents = 'none';
+        tooltip.style.opacity = '0';
+        tooltip.style.transition = 'opacity 0.15s';
+        tooltip.style.zIndex = '99999';
+        tooltip.style.left = '0';
+        tooltip.style.top = '0';
+        tooltip.style.whiteSpace = 'nowrap';
+        tooltip.style.transform = 'translateY(8px)';
+        tooltip.innerText = manualButton.title;
+        document.body.appendChild(tooltip);
+        // Arrow
+        const arrow = document.createElement('div');
+        arrow.style.position = 'absolute';
+        arrow.style.top = '-8px';
+        arrow.style.left = '50%';
+        arrow.style.transform = 'translateX(-50%)';
+        arrow.style.width = '0';
+        arrow.style.height = '0';
+        arrow.style.borderLeft = '8px solid transparent';
+        arrow.style.borderRight = '8px solid transparent';
+        arrow.style.borderBottom = '8px solid #18181b';
+        tooltip.appendChild(arrow);
+        // Tooltip handlers
+        manualButton.onmouseenter = (e) => {
+            manualButton.title = '';
+            tooltip.innerText = dontShowAgain
+                ? 'Disabled for this session (right-click to re-enable)'
+                : 'Play Connect Four (right-click to disable for this session)';
+            const rect = manualButton.getBoundingClientRect();
+            tooltip.style.left = `${rect.left + rect.width/2 - tooltip.offsetWidth/2}px`;
+            tooltip.style.top = `${rect.bottom + 8}px`;
+            tooltip.style.opacity = '1';
+        };
+        manualButton.onmouseleave = () => {
+            tooltip.style.opacity = '0';
+        };
+        manualButton.onmousemove = (e) => {
+            const rect = manualButton.getBoundingClientRect();
+            tooltip.style.left = `${rect.left + rect.width/2 - tooltip.offsetWidth/2}px`;
+            tooltip.style.top = `${rect.bottom + 8}px`;
         };
         actionsArea.appendChild(manualButton);
         observer.disconnect(); // Stop observing once added

@@ -105,7 +105,7 @@
 
                     // Switch back to Player's turn
                     currentPlayer = PLAYER_PIECE;
-                    updateStatus('Your turn (Player 1 - X)');
+                    updateStatus('Your turn');
                     enableInput(currentBoard); // Re-enable valid inputs
 
                 } else {
@@ -153,7 +153,7 @@
         currentPlayer = PLAYER_PIECE;
         gameOver = false;
         renderBoard(currentBoard);
-        updateStatus('Your turn (Player 1 - X)');
+        updateStatus('Your turn');
         // No need to call enableInput here, renderBoard calls renderInputControls which handles it
     }
 
@@ -174,5 +174,29 @@
     // Initial game setup on load
     console.log("Modal: Initializing game board.");
     resetGame();
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+        // R: Restart game
+        if (e.key === 'r' || e.key === 'R') {
+            e.preventDefault();
+            resetGame();
+        }
+        // 1-7: Drop in column (if player's turn)
+        if (!gameOver && currentPlayer === PLAYER_PIECE) {
+            const col = parseInt(e.key, 10);
+            if (col >= 1 && col <= COLS) {
+                handlePlayerMove(col - 1);
+            }
+        }
+        // D: Toggle 'Don't show automatically'
+        if (e.key === 'd' || e.key === 'D') {
+            const dontShow = document.getElementById('dontShowConnectFour');
+            if (dontShow) {
+                dontShow.checked = !dontShow.checked;
+                dontShow.dispatchEvent(new Event('change'));
+            }
+        }
+    });
 
 }()); // End IIFE

@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect Four Simulation</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+        }
+
+        table {
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        button {
+            padding: 10px 15px;
+            font-size: 1em;
+            cursor: pointer;
+            margin: 15px 5px 15px 0;
+        }
+
+        #matchupResults {
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+
+        #matchupResults pre {
+            background-color: #f8f8f8;
+            padding: 10px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .board-log {
+            font-family: monospace;
+            line-height: 1.2;
+            margin-top: 5px;
+        }
+
+        .x-cell {
+            color: #1976d2;
+            font-weight: bold;
+        }
+
+        .o-cell {
+            color: #d32f2f;
+            font-weight: bold;
+        }
+
+        .console-log-area {
+            background: #222;
+            color: #eee;
+            font-family: monospace;
+            font-size: 0.95em;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0 20px 0;
+            max-height: 180px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            margin: 10px 0;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Connect Four AI Simulation</h1>
+
+
+    <h2>Single Game Log</h2>
+    <p>Runs one game: AI Depth 5 vs Random (opening center), logging each step.</p>
+    <button id="runLogButton">Run Single Game Log (D5 vs Random)</button>
+
+    <h2>AI vs AI Suite</h2>
+    <p>Runs simulations pitting AI at different depths against each other.</p>
+    <p><i>It might take a minute. Patience is appreciated.</i></p>
+    <button id="runSuiteButton">Run AI vs AI Suite</button>
+
+
+    <div id="consoleLogArea" class="console-log-area hidden"></div>
+    <div id="matchupResults"></div>
+
+    <script src="gameLogic.js"></script>
+    <script src="aiLogic.js"></script>
+    <script src="simulation.js"></script>
+    <script>
+        let simulationData = {};
+
+        // --- Console log capture utility ---
+        function withConsoleCapture(fn, logDiv) {
+            const oldLog = console.log;
+            const oldErr = console.error;
+            let buffer = '';
+            function write(msg, isErr) {
+                buffer += (isErr ? '[ERR] ' : '') + msg + '\n';
+                if (logDiv) {
+                    logDiv.textContent = buffer;
+                    logDiv.scrollTop = logDiv.scrollHeight;
+                }
+            }
+            console.log = (...args) => write(args.join(' '), false);
+            console.error = (...args) => write(args.join(' '), true);
+            try {
+                fn();
+            } finally {
+                console.log = oldLog;
+                console.error = oldErr;
+            }
+        }
+
+        document.getElementById('runSuiteButton').addEventListener('click', async () => {
+            const matchupResultsDiv = document.getElementById('matchupResults');
+            const consoleLogDiv = document.getElementById('consoleLogArea');
+            consoleLogDiv.classList.remove('hidden');
+            consoleLogDiv.textContent = 'Running simulation...\n';
+            // Show loading for each matchup
+            const matchups = [[3, 1], [5, 1], [5, 3]];
+            matchupResultsDiv.innerHTML = matchups.map(m => {
+                const key = `${Math.max(m[0], m[1])}v${Math.min(m[0], m[1])}`;
+                return `<div id="matchup-${key}" class="matchup-section">
+                    <h3>Depth ${Math.max(m[0], m[1])} (<span class='x-cell'>X</span>) vs Depth ${Math.min(m[0], m[1])} (<span class='o-cell'>O</span>)</h3>
+                    <div class="loading-spinner">Loading...</div>
+                </div>`;
+            }).join('');
+            try {
+                await new Promise(resolve => setTimeout(resolve, 100)); // let spinner show
+                await new Promise((resolve) => {
+                    withConsoleCapture(() => {
+                        simulationData = undefined;
+                        runSimulationSuite_AIvsAI().then(result => {
+                            simulationData = result;
+                            resolve();
+                        });
+                    }, consoleLogDiv);
+                });
+                consoleLogDiv.textContent += '\nSimulation complete.';
+                // Render the matchup results
+                matchupResultsDiv.innerHTML = '';
+                const sortedKeys = Object.keys(simulationData).sort((a, b) => {
+                    const depthA = parseInt(a.split('v')[0]);
+                    const depthB = parseInt(b.split('v')[0]);
+                    if (depthA !== depthB) return depthB - depthA;
+                    const lowA = parseInt(a.split('v')[1]);
+                    const lowB = parseInt(b.split('v')[1]);
+                    return lowB - lowA;
+                });
+                for (const key of sortedKeys) {
+                    const res = simulationData[key];
+                    const matchupId = `matchup-${key}`;
+                    let sectionHTML = `
+                      <div class="matchup-section" id="${matchupId}" style="margin-bottom: 2em;">
+                        <h3>Depth ${res.depthHigh} (<span class='x-cell'>X</span>) vs Depth ${res.depthLow} (<span class='o-cell'>O</span>)</h3>
+                        <table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse; margin-top: 10px; text-align: center;">
+                            <thead>
+                                <tr>
+                                    <th>Higher Depth Wins %</th>
+                                    <th>Lower Depth Wins %</th>
+                                    <th>Draw %</th>
+                                    <th>Duration (s)</th>
+                                    <th>Errors</th>
+                                    <th>View Log</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>${res.highDepthWinRate}%</td>
+                                    <td>${res.lowDepthWinRate}%</td>
+                                    <td>${res.drawRate}%</td>
+                                    <td>${res.duration_sec}</td>
+                                    <td>${res.errors}</td>
+                                    <td><button onclick="displayAiVsAiLog('${key}', 0)">Game 1</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div id="log-${key}-0" class="log-output" style="margin-top: 1em;"></div>
+                      </div>
+                    `;
+                    matchupResultsDiv.innerHTML += sectionHTML;
+                }
+            } catch (error) {
+                matchupResultsDiv.innerHTML = `<p style="color: red;">Error running simulation suite. Check console.</p>`;
+                consoleLogDiv.textContent += '\nError: ' + error;
+            }
+        });
+
+        // Listener for Single Game Log button (unchanged)
+        document.getElementById('runLogButton').addEventListener('click', () => {
+            document.getElementById('matchupResults').innerHTML = '';
+            const logOutputDiv = document.createElement('div');
+            logOutputDiv.innerHTML = 'Running Single Game Log...';
+            document.body.appendChild(logOutputDiv);
+            try {
+                const { log, winner } = runSingleGameWithLog(5, 3);
+                let logHTML = `<h3>Single Game Log (AI D5 vs Random, P1 Forced Open Col 4)</h3>`;
+                log.forEach(entry => {
+                    logHTML += `<p><strong>Move ${entry.moveNum}:</strong> ${entry.player} in column ${entry.col}</p>`;
+                    let boardStr = entry.board.map(row =>
+                        "  " + row.map(cell => cell === EMPTY ? '.' : (cell === PLAYER_PIECE ? 'X' : 'O')).join(' ')
+                    ).join('\n');
+                    logHTML += `<pre class="board-log">${boardStr}</pre>`;
+                });
+                let resultMsg = "<strong>Result:</strong> ";
+                if (winner === AI_PIECE) resultMsg += `AI (D5) wins`;
+                else if (winner === PLAYER_PIECE) resultMsg += 'Random wins';
+                else if (winner === null) resultMsg += 'Draw';
+                else resultMsg += 'Error';
+                logHTML += `<p>${resultMsg}</p>`;
+                logOutputDiv.innerHTML = logHTML;
+            } catch (error) {
+                logOutputDiv.innerHTML = `<p style="color: red;">Error running single game log. Check console.</p>`;
+            }
+        });
+
+        // Update displayAiVsAiLog to only update the relevant log area
+        function displayAiVsAiLog(matchupKey, gameIndex) {
+            const logDiv = document.getElementById(`log-${matchupKey}-${gameIndex}`);
+            if (!simulationData || !simulationData[matchupKey] || !simulationData[matchupKey].gameLogs || gameIndex >= simulationData[matchupKey].gameLogs.length) {
+                logDiv.innerHTML = `<p style="color: red;">Log data not found for ${matchupKey}, game ${gameIndex + 1}. Please run the suite first.</p>`;
+                return;
+            }
+            const log = simulationData[matchupKey].gameLogs[gameIndex];
+            const matchupInfo = simulationData[matchupKey];
+            const title = `AI vs AI Log: Depth ${matchupInfo.depthHigh} (<span class='x-cell'>X</span>) vs Depth ${matchupInfo.depthLow} (<span class='o-cell'>O</span>) (Game ${gameIndex + 1})`;
+            let logHTML = `<div class="log-note">For step-by-step play, open the browser console.</div><h3>${title}</h3>`;
+            let winnerPiece = null;
+            log.forEach(entry => {
+                logHTML += `<p><strong>Move ${entry.moveNum}:</strong> ${entry.player} in column ${entry.col}</p>`;
+                if (entry.error) {
+                    logHTML += `<p style="color: red;">Error: ${entry.message || 'Unknown error'}</p>`;
+                }
+                let boardStr = entry.board.map(row =>
+                    "  " + row.map(cell =>
+                        cell === EMPTY ? '.' :
+                            cell === PLAYER_PIECE ? '<span class="x-cell">X</span>' :
+                                '<span class="o-cell">O</span>'
+                    ).join(' ')
+                ).join('<br>');
+                logHTML += `<pre class="board-log">${boardStr}</pre>`;
+            });
+            const lastMove = log[log.length - 1];
+            if (lastMove && !lastMove.error) {
+                if (checkWin(lastMove.board, PLAYER_PIECE)) {
+                    winnerPiece = PLAYER_PIECE;
+                } else if (checkWin(lastMove.board, AI_PIECE)) {
+                    winnerPiece = AI_PIECE;
+                } else if (isBoardFull(lastMove.board)) {
+                    winnerPiece = null;
+                }
+            }
+            let resultMsg = "<strong>Result:</strong> ";
+            if (winnerPiece === PLAYER_PIECE) {
+                resultMsg += `Player 1 (<span class='x-cell'>X</span>, Depth ${matchupInfo.depthHigh}) wins`;
+            } else if (winnerPiece === AI_PIECE) {
+                resultMsg += `Player 2 (<span class='o-cell'>O</span>, Depth ${matchupInfo.depthLow}) wins`;
+            } else if (winnerPiece === null) {
+                resultMsg += 'Draw';
+            } else {
+                resultMsg += 'Error or Incomplete';
+            }
+            logHTML += `<p>${resultMsg}</p>`;
+            logDiv.innerHTML = logHTML;
+        }
+    </script>
+</body>
+
+</html>

@@ -160,10 +160,9 @@ function minimax(board, depth, alpha, beta, maximizingPlayer) {
 }
 
 // Function called when it's AI's turn
-function makeAiMove(board) {
+function makeAiMove(board, depth = 5) { // Accept depth parameter, default to 5
     // Rationale: Set search depth for Minimax. Higher depth = stronger AI but slower computation.
     // Depth 5 is a reasonable balance. See Report Section 4.1 (Performance Analysis).
-    const depth = 5;
     const result = minimax(board, depth, -Infinity, Infinity, true);
     console.log(`Minimax AI (depth ${depth}) recommending column: ${result[0]}, score: ${result[1]}`);
     // Fallback if minimax returns null (should only happen if no valid moves)

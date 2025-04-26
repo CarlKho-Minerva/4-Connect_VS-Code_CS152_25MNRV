@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect Four Simulation</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        table { border-collapse: collapse; margin-top: 15px; }
+        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        button { padding: 10px 15px; font-size: 1em; cursor: pointer; margin-bottom: 15px;}
+    </style>
+</head>
+<body>
+    <h1>Connect Four AI Simulation</h1>
+    <p>Runs simulations with the AI at different depths against a random player opening in the center.</p>
+    <button id="runSuiteButton">Run Simulation Suite</button>
+    <div id="simulationResults">
+        <!-- Results will be displayed here -->
+    </div>
+
+    <script src="gameLogic.js"></script>
+    <script src="aiLogic.js"></script>
+    <script src="simulation.js"></script>
+    <script>
+        // Add the button trigger to call the new AI vs AI simulation suite
+        document.getElementById('runSuiteButton').addEventListener('click', () => runSimulationSuite_AIvsAI());
+    </script>
+</body>
+</html>

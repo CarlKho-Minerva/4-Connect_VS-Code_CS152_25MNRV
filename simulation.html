@@ -1,35 +1,108 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Connect Four Simulation</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; }
-        table { border-collapse: collapse; margin-top: 15px; }
-        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-        button { padding: 10px 15px; font-size: 1em; cursor: pointer; margin: 15px 5px 15px 0;}
-        #matchupResults { margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
-        #matchupResults pre { background-color: #f8f8f8; padding: 10px; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word; }
-        .board-log { font-family: monospace; line-height: 1.2; margin-top: 5px; }
-        .x-cell { color: #1976d2; font-weight: bold; }
-        .o-cell { color: #d32f2f; font-weight: bold; }
-        .loading-spinner { display: inline-block; margin: 10px 0; }
-        .log-note { font-size: 0.95em; color: #888; margin-bottom: 8px; }
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+        }
+
+        table {
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        button {
+            padding: 10px 15px;
+            font-size: 1em;
+            cursor: pointer;
+            margin: 15px 5px 15px 0;
+        }
+
+        #matchupResults {
+            margin-top: 20px;
+            border-top: 1px solid #eee;
+            padding-top: 15px;
+        }
+
+        #matchupResults pre {
+            background-color: #f8f8f8;
+            padding: 10px;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .board-log {
+            font-family: monospace;
+            line-height: 1.2;
+            margin-top: 5px;
+        }
+
+        .x-cell {
+            color: #1976d2;
+            font-weight: bold;
+        }
+
+        .o-cell {
+            color: #d32f2f;
+            font-weight: bold;
+        }
+
+        .console-log-area {
+            background: #222;
+            color: #eee;
+            font-family: monospace;
+            font-size: 0.95em;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0 20px 0;
+            max-height: 180px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            margin: 10px 0;
+        }
+
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
+
 <body>
     <h1>Connect Four AI Simulation</h1>
 
-    <h2>AI vs AI Suite</h2>
-    <p>Runs simulations pitting AI at different depths against each other.</p>
-    <button id="runSuiteButton">Run AI vs AI Suite</button>
 
     <h2>Single Game Log</h2>
     <p>Runs one game: AI Depth 5 vs Random (opening center), logging each step.</p>
     <button id="runLogButton">Run Single Game Log (D5 vs Random)</button>
 
+    <h2>AI vs AI Suite</h2>
+    <p>Runs simulations pitting AI at different depths against each other.</p>
+    <p><i>It might take a minute. Patience is appreciated.</i></p>
+    <button id="runSuiteButton">Run AI vs AI Suite</button>
+
+
+    <div id="consoleLogArea" class="console-log-area hidden"></div>
     <div id="matchupResults"></div>
 
     <script src="gameLogic.js"></script>
@@ -38,9 +111,33 @@
     <script>
         let simulationData = {};
 
-        // Listener for AI vs AI Suite button
+        // --- Console log capture utility ---
+        function withConsoleCapture(fn, logDiv) {
+            const oldLog = console.log;
+            const oldErr = console.error;
+            let buffer = '';
+            function write(msg, isErr) {
+                buffer += (isErr ? '[ERR] ' : '') + msg + '\n';
+                if (logDiv) {
+                    logDiv.textContent = buffer;
+                    logDiv.scrollTop = logDiv.scrollHeight;
+                }
+            }
+            console.log = (...args) => write(args.join(' '), false);
+            console.error = (...args) => write(args.join(' '), true);
+            try {
+                fn();
+            } finally {
+                console.log = oldLog;
+                console.error = oldErr;
+            }
+        }
+
         document.getElementById('runSuiteButton').addEventListener('click', async () => {
             const matchupResultsDiv = document.getElementById('matchupResults');
+            const consoleLogDiv = document.getElementById('consoleLogArea');
+            consoleLogDiv.classList.remove('hidden');
+            consoleLogDiv.textContent = 'Running simulation...\n';
             // Show loading for each matchup
             const matchups = [[3, 1], [5, 1], [5, 3]];
             matchupResultsDiv.innerHTML = matchups.map(m => {
@@ -51,7 +148,18 @@
                 </div>`;
             }).join('');
             try {
-                simulationData = await runSimulationSuite_AIvsAI();
+                await new Promise(resolve => setTimeout(resolve, 100)); // let spinner show
+                await new Promise((resolve) => {
+                    withConsoleCapture(() => {
+                        simulationData = undefined;
+                        runSimulationSuite_AIvsAI().then(result => {
+                            simulationData = result;
+                            resolve();
+                        });
+                    }, consoleLogDiv);
+                });
+                consoleLogDiv.textContent += '\nSimulation complete.';
+                // Render the matchup results
                 matchupResultsDiv.innerHTML = '';
                 const sortedKeys = Object.keys(simulationData).sort((a, b) => {
                     const depthA = parseInt(a.split('v')[0]);
@@ -96,6 +204,7 @@
                 }
             } catch (error) {
                 matchupResultsDiv.innerHTML = `<p style="color: red;">Error running simulation suite. Check console.</p>`;
+                consoleLogDiv.textContent += '\nError: ' + error;
             }
         });
 
@@ -147,8 +256,8 @@
                 let boardStr = entry.board.map(row =>
                     "  " + row.map(cell =>
                         cell === EMPTY ? '.' :
-                        cell === PLAYER_PIECE ? '<span class="x-cell">X</span>' :
-                        '<span class="o-cell">O</span>'
+                            cell === PLAYER_PIECE ? '<span class="x-cell">X</span>' :
+                                '<span class="o-cell">O</span>'
                     ).join(' ')
                 ).join('<br>');
                 logHTML += `<pre class="board-log">${boardStr}</pre>`;
@@ -178,4 +287,5 @@
         }
     </script>
 </body>
+
 </html>

@@ -3,7 +3,9 @@
 
 [![Connect Four Demo](4C_Thumbnail.jpg)](https://www.youtube.com/watch?v=sGJ0lAW8Q54)
 [View Connect4GPT Demo](https://www.youtube.com/watch?v=sGJ0lAW8Q54)
-
+![alt text](media/image.png)
+Testing Included
+![alt text](media/image-1.png)
 Play Connect Four in a beautiful, modern modal while waiting for ChatGPT responses! This extension adds a seamless, keyboard-accessible Connect Four game to the ChatGPT interface, styled to match the ChatGPT brand.
 
 ## Features
@@ -13,6 +15,10 @@ Play Connect Four in a beautiful, modern modal while waiting for ChatGPT respons
 - **Session Toggle**: Right-click the Play button to disable/enable auto-popup for the session.
 - **Custom Tooltip**: Clear, branded tooltip explains Play button behavior.
 - **Responsive & Accessible**: Game is fully keyboard and mouse accessible.
+
+
+![alt text](media/image-2.png)
+In case you're interested in the VS Code version. Here's the link to the [Connect Four VS Code Extension](https://marketplace.visualstudio.com/items/?itemName=charvalton.connectfourbreak).
 
 ## Installation (Development)
 1. **Clone or Download** this repository.
@@ -44,6 +50,7 @@ Play Connect Four in a beautiful, modern modal while waiting for ChatGPT respons
 ## Credits
 - Connect Four AI and logic adapted from the VS Code extension by cvk.
 - UI inspired by ChatGPT's brand and user experience.
+
 
 ## License
 MIT

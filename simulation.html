@@ -10,8 +10,8 @@
         th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
         th { background-color: #f2f2f2; }
         button { padding: 10px 15px; font-size: 1em; cursor: pointer; margin: 15px 5px 15px 0;} /* Added margin */
-        #singleGameLogOutput { margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
-        #singleGameLogOutput pre { background-color: #f8f8f8; padding: 10px; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word; } /* Style for log output */
+        #matchupResults { margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
+        #matchupResults pre { background-color: #f8f8f8; padding: 10px; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word; } /* Style for log output */
         .board-log { font-family: monospace; line-height: 1.2; margin-top: 5px; } /* Style for board in log */
     </style>
 </head>
@@ -26,106 +26,119 @@
     <p>Runs one game: AI Depth 5 vs Random (opening center), logging each step.</p>
     <button id="runLogButton">Run Single Game Log (D5 vs Random)</button>
 
-    <div id="simulationResults">
-        <!-- AI vs AI Results will be displayed here -->
-    </div>
-
-    <div id="singleGameLogOutput">
-        <!-- Single Game Log will be displayed here -->
-    </div>
+    <div id="matchupResults"></div>
+    <!-- Removed old #simulationResults and #singleGameLogOutput -->
 
     <script src="gameLogic.js"></script>
     <script src="aiLogic.js"></script>
     <script src="simulation.js"></script>
     <script>
-        // --- Global variable to store simulation results for log access ---
         let simulationData = {};
-
-        // --- Event Listeners ---
 
         // Listener for AI vs AI Suite button
         document.getElementById('runSuiteButton').addEventListener('click', async () => {
-            // Clear previous results/logs
-            document.getElementById('simulationResults').innerHTML = 'Running AI vs AI Suite...';
-            document.getElementById('singleGameLogOutput').innerHTML = '';
+            const matchupResultsDiv = document.getElementById('matchupResults');
+            matchupResultsDiv.innerHTML = 'Running AI vs AI Suite...';
             try {
-                // <<< Store results globally
-                simulationData = await runSimulationSuite_AIvsAI(); // Run the suite
+                simulationData = await runSimulationSuite_AIvsAI();
+                // Render each matchup as its own section
+                matchupResultsDiv.innerHTML = '';
+                const sortedKeys = Object.keys(simulationData).sort((a, b) => {
+                    const depthA = parseInt(a.split('v')[0]);
+                    const depthB = parseInt(b.split('v')[0]);
+                    if (depthA !== depthB) return depthB - depthA;
+                    const lowA = parseInt(a.split('v')[1]);
+                    const lowB = parseInt(b.split('v')[1]);
+                    return lowB - lowA;
+                });
+                for (const key of sortedKeys) {
+                    const res = simulationData[key];
+                    const matchupId = `matchup-${key}`;
+                    let sectionHTML = `
+                      <div class="matchup-section" id="${matchupId}" style="margin-bottom: 2em;">
+                        <h3>Depth ${res.depthHigh} vs Depth ${res.depthLow}</h3>
+                        <table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse; margin-top: 10px; text-align: center;">
+                            <thead>
+                                <tr>
+                                    <th>Higher Depth Wins %</th>
+                                    <th>Lower Depth Wins %</th>
+                                    <th>Draw %</th>
+                                    <th>Duration (s)</th>
+                                    <th>Errors</th>
+                                    <th>View Log</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>${res.highDepthWinRate}%</td>
+                                    <td>${res.lowDepthWinRate}%</td>
+                                    <td>${res.drawRate}%</td>
+                                    <td>${res.duration_sec}</td>
+                                    <td>${res.errors}</td>
+                                    <td><button onclick="displayAiVsAiLog('${key}', 0)">Game 1</button></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div id="log-${key}-0" class="log-output" style="margin-top: 1em;"></div>
+                      </div>
+                    `;
+                    matchupResultsDiv.innerHTML += sectionHTML;
+                }
             } catch (error) {
-                console.error("Error running simulation suite:", error);
-                document.getElementById('simulationResults').innerHTML = `<p style="color: red;">Error running simulation suite. Check console.</p>`;
+                matchupResultsDiv.innerHTML = `<p style="color: red;">Error running simulation suite. Check console.</p>`;
             }
         });
 
-        // Listener for Single Game Log button
+        // Listener for Single Game Log button (unchanged)
         document.getElementById('runLogButton').addEventListener('click', () => {
-            // Clear previous results/logs
-            document.getElementById('simulationResults').innerHTML = '';
-            const logOutputDiv = document.getElementById('singleGameLogOutput');
+            document.getElementById('matchupResults').innerHTML = '';
+            const logOutputDiv = document.createElement('div');
             logOutputDiv.innerHTML = 'Running Single Game Log...';
-
+            document.body.appendChild(logOutputDiv);
             try {
-                const { log, winner } = runSingleGameWithLog(5, 3); // Run the logged game
-
-                // Format and display the log
+                const { log, winner } = runSingleGameWithLog(5, 3);
                 let logHTML = `<h3>Single Game Log (AI D5 vs Random, P1 Forced Open Col 4)</h3>`;
                 log.forEach(entry => {
                     logHTML += `<p><strong>Move ${entry.moveNum}:</strong> ${entry.player} in column ${entry.col}</p>`;
-                    // Format board state using actual newline characters
                     let boardStr = entry.board.map(row =>
                         "  " + row.map(cell => cell === EMPTY ? '.' : (cell === PLAYER_PIECE ? 'X' : 'O')).join(' ')
-                    ).join('\n'); // Use actual newline character
+                    ).join('\n');
                     logHTML += `<pre class="board-log">${boardStr}</pre>`;
                 });
-
-                // Display result
                 let resultMsg = "<strong>Result:</strong> ";
                 if (winner === AI_PIECE) resultMsg += `AI (D5) wins`;
                 else if (winner === PLAYER_PIECE) resultMsg += 'Random wins';
                 else if (winner === null) resultMsg += 'Draw';
                 else resultMsg += 'Error';
                 logHTML += `<p>${resultMsg}</p>`;
-
                 logOutputDiv.innerHTML = logHTML;
-
             } catch (error) {
-                 console.error("Error running single game log:", error);
-                 logOutputDiv.innerHTML = `<p style="color: red;">Error running single game log. Check console.</p>`;
+                logOutputDiv.innerHTML = `<p style="color: red;">Error running single game log. Check console.</p>`;
             }
         });
 
-        // --- Function to display AI vs AI game log ---
+        // Update displayAiVsAiLog to only update the relevant log area
         function displayAiVsAiLog(matchupKey, gameIndex) {
-            console.log(`Displaying log for ${matchupKey}, game ${gameIndex + 1}`);
-            const logOutputDiv = document.getElementById('singleGameLogOutput');
-            logOutputDiv.innerHTML = ''; // Clear previous log
-            document.getElementById('simulationResults').innerHTML = ''; // Clear results table
-
+            const logDiv = document.getElementById(`log-${matchupKey}-${gameIndex}`);
             if (!simulationData || !simulationData[matchupKey] || !simulationData[matchupKey].gameLogs || gameIndex >= simulationData[matchupKey].gameLogs.length) {
-                logOutputDiv.innerHTML = `<p style="color: red;">Log data not found for ${matchupKey}, game ${gameIndex + 1}. Please run the suite first.</p>`;
+                logDiv.innerHTML = `<p style="color: red;">Log data not found for ${matchupKey}, game ${gameIndex + 1}. Please run the suite first.</p>`;
                 return;
             }
-
             const log = simulationData[matchupKey].gameLogs[gameIndex];
             const matchupInfo = simulationData[matchupKey];
             const title = `AI vs AI Log: Depth ${matchupInfo.depthHigh} vs Depth ${matchupInfo.depthLow} (Game ${gameIndex + 1})`;
-
             let logHTML = `<h3>${title}</h3>`;
             let winnerPiece = null;
-
             log.forEach(entry => {
                 logHTML += `<p><strong>Move ${entry.moveNum}:</strong> ${entry.player} in column ${entry.col}</p>`;
                 if (entry.error) {
                     logHTML += `<p style="color: red;">Error: ${entry.message || 'Unknown error'}</p>`;
                 }
-                // Format board state using actual newline characters
                 let boardStr = entry.board.map(row =>
                     "  " + row.map(cell => cell === EMPTY ? '.' : (cell === PLAYER_PIECE ? 'X' : 'O')).join(' ')
                 ).join('\n');
                 logHTML += `<pre class="board-log">${boardStr}</pre>`;
             });
-
-            // Determine winner based on the *last* move in the log (if no error)
             const lastMove = log[log.length - 1];
             if (lastMove && !lastMove.error) {
                 if (checkWin(lastMove.board, PLAYER_PIECE)) {
@@ -133,29 +146,22 @@
                 } else if (checkWin(lastMove.board, AI_PIECE)) {
                     winnerPiece = AI_PIECE;
                 } else if (isBoardFull(lastMove.board)) {
-                    winnerPiece = null; // Draw
+                    winnerPiece = null;
                 }
             }
-
-            // Display result (inferring winner depth from piece)
             let resultMsg = "<strong>Result:</strong> ";
             if (winnerPiece === PLAYER_PIECE) {
-                // Need to know which depth corresponds to PLAYER_PIECE for *this specific game*
-                // This info isn't directly in the log, we might need to reconstruct or pass it
-                // For now, let's just say Player 1 wins (needs refinement if starting player alternates)
                 resultMsg += `Player 1 (Depth ${matchupInfo.depthHigh} or ${matchupInfo.depthLow}) wins`;
             } else if (winnerPiece === AI_PIECE) {
-                 resultMsg += `Player 2 (Depth ${matchupInfo.depthHigh} or ${matchupInfo.depthLow}) wins`;
+                resultMsg += `Player 2 (Depth ${matchupInfo.depthHigh} or ${matchupInfo.depthLow}) wins`;
             } else if (winnerPiece === null) {
                 resultMsg += 'Draw';
             } else {
                 resultMsg += 'Error or Incomplete';
             }
             logHTML += `<p>${resultMsg}</p>`;
-
-            logOutputDiv.innerHTML = logHTML;
+            logDiv.innerHTML = logHTML;
         }
-
     </script>
 </body>
 </html>

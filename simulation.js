@@ -1,4 +1,4 @@
-// simulation.js (REVISED - AI vs AI Experiment - CORRECTED TABLE OUTPUT)
+// simulation.js (AI vs AI Experiment - WITH MOVE LOGGING)
 // Assumes gameLogic.js and aiLogic.js are loaded first.
 
 // Helper function needed for runSingleGameWithLog
@@ -9,10 +9,12 @@ function makeRandomMove(board) {
 }
 
 // Plays one game pitting two AI depths against each other
-// Returns winner DEPTH, null for Draw, or 'ERROR'
+// Returns an object { winner: DEPTH | null | 'ERROR', log: Array }
 function runSingleGame_AIvsAI(depth1, depth2, ai1Starts = true) {
     let board = createBoard();
     let winner = null;
+    let log = []; // <<< Add log array
+    let moveNum = 1; // <<< Add move counter
     let pieces = {}; // Map depth to piece number
     let depths = {}; // Map piece number to depth
     let currentPlayer;
@@ -37,15 +39,20 @@ function runSingleGame_AIvsAI(depth1, depth2, ai1Starts = true) {
     while (!gameOver) {
         let col = null;
         let currentDepth = depths[currentPlayer]; // Get depth for the current piece/player
+        let playerName = `AI (D${currentDepth})`; // <<< Get player name for log
 
         col = makeAiMove(board, currentDepth); // Get move from the correct AI depth
 
         if (col === null || !dropPiece(board, col, currentPlayer)) {
             winner = isBoardFull(board) && !checkWin(board, PLAYER_PIECE) && !checkWin(board, AI_PIECE) ? null : 'ERROR';
+            log.push({ moveNum, player: playerName, col: col !== null ? col + 1 : 'N/A', board: board.map(row => [...row]), error: true, message: 'Invalid move or drop failed' }); // <<< Log error
             console.error("Simulation Error:", { winner, currentDepth, currentPlayer, col });
             gameOver = true;
             break;
         }
+
+        // <<< Log the successful move
+        log.push({ moveNum, player: playerName, col: col + 1, board: board.map(row => [...row]) });
 
         if (checkWin(board, currentPlayer)) {
             winner = depths[currentPlayer]; // Winner is the DEPTH associated with the winning piece
@@ -57,9 +64,11 @@ function runSingleGame_AIvsAI(depth1, depth2, ai1Starts = true) {
 
         if (!gameOver) {
              currentPlayer = (currentPlayer === PLAYER_PIECE) ? AI_PIECE : PLAYER_PIECE;
+             moveNum++; // <<< Increment move number
         }
     }
-    return winner; // Return the DEPTH of the winning AI, or null/ERROR
+    // <<< Return winner depth and the log
+    return { winner: winner, log: log };
 }
 
 
@@ -80,6 +89,7 @@ async function runSimulationSuite_AIvsAI(numGamesPerMatchup = 30, matchups = [[3
         let lowDepthWins = 0;
         let draws = 0;
         let errors = 0;
+        let gameLogs = []; // <<< Array to store logs for this matchup
 
         console.log(`  Running ${key}...`);
         const matchupStartTime = performance.now();
@@ -89,7 +99,10 @@ async function runSimulationSuite_AIvsAI(numGamesPerMatchup = 30, matchups = [[3
              // await new Promise(resolve => setTimeout(resolve, 0)); // Optional: yield execution briefly
 
             const highDepthStarts = (i % 2 === 0); // Alternate who starts
-            const winnerDepth = runSingleGame_AIvsAI(depthHigh, depthLow, highDepthStarts);
+            // <<< Capture the result object { winner, log }
+            const gameResult = runSingleGame_AIvsAI(depthHigh, depthLow, highDepthStarts);
+            const winnerDepth = gameResult.winner;
+            gameLogs.push(gameResult.log); // <<< Store the log
 
             if (winnerDepth === depthHigh) highDepthWins++;
             else if (winnerDepth === depthLow) lowDepthWins++;
@@ -111,7 +124,8 @@ async function runSimulationSuite_AIvsAI(numGamesPerMatchup = 30, matchups = [[3
             highDepthWinRate: ((highDepthWins / numGamesPerMatchup) * 100).toFixed(1),
             lowDepthWinRate: ((lowDepthWins / numGamesPerMatchup) * 100).toFixed(1),
             drawRate: ((draws / numGamesPerMatchup) * 100).toFixed(1),
-            duration_sec: duration
+            duration_sec: duration,
+            gameLogs: gameLogs // <<< Add logs to results object
         };
          console.log(`    ${key} complete. Duration: ${duration}s`);
     })); // End of Promise.all
@@ -136,6 +150,7 @@ async function runSimulationSuite_AIvsAI(numGamesPerMatchup = 30, matchups = [[3
                         <th>Draw %</th>
                         <th>Duration (s)</th>
                         <th>Errors</th>
+                        <th>View Log</th> <!-- <<< Add View Log column header -->
                     </tr>
                 </thead>
                 <tbody>`;
@@ -161,6 +176,7 @@ async function runSimulationSuite_AIvsAI(numGamesPerMatchup = 30, matchups = [[3
                     <td>${res.drawRate}%</td>
                     <td>${res.duration_sec}</td>
                     <td>${res.errors}</td>
+                    <td><button onclick="displayAiVsAiLog('${key}', 0)">Game 1</button></td> <!-- <<< Add button to view log for game 0 -->
                 </tr>`;
         }
         tableHTML += `</tbody></table>`;

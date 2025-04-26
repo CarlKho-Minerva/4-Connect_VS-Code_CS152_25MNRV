@@ -9,10 +9,14 @@
         table { border-collapse: collapse; margin-top: 15px; }
         th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
         th { background-color: #f2f2f2; }
-        button { padding: 10px 15px; font-size: 1em; cursor: pointer; margin: 15px 5px 15px 0;} /* Added margin */
+        button { padding: 10px 15px; font-size: 1em; cursor: pointer; margin: 15px 5px 15px 0;}
         #matchupResults { margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; }
-        #matchupResults pre { background-color: #f8f8f8; padding: 10px; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word; } /* Style for log output */
-        .board-log { font-family: monospace; line-height: 1.2; margin-top: 5px; } /* Style for board in log */
+        #matchupResults pre { background-color: #f8f8f8; padding: 10px; border-radius: 4px; white-space: pre-wrap; word-wrap: break-word; }
+        .board-log { font-family: monospace; line-height: 1.2; margin-top: 5px; }
+        .x-cell { color: #1976d2; font-weight: bold; }
+        .o-cell { color: #d32f2f; font-weight: bold; }
+        .loading-spinner { display: inline-block; margin: 10px 0; }
+        .log-note { font-size: 0.95em; color: #888; margin-bottom: 8px; }
     </style>
 </head>
 <body>
@@ -27,7 +31,6 @@
     <button id="runLogButton">Run Single Game Log (D5 vs Random)</button>
 
     <div id="matchupResults"></div>
-    <!-- Removed old #simulationResults and #singleGameLogOutput -->
 
     <script src="gameLogic.js"></script>
     <script src="aiLogic.js"></script>
@@ -38,10 +41,17 @@
         // Listener for AI vs AI Suite button
         document.getElementById('runSuiteButton').addEventListener('click', async () => {
             const matchupResultsDiv = document.getElementById('matchupResults');
-            matchupResultsDiv.innerHTML = 'Running AI vs AI Suite...';
+            // Show loading for each matchup
+            const matchups = [[3, 1], [5, 1], [5, 3]];
+            matchupResultsDiv.innerHTML = matchups.map(m => {
+                const key = `${Math.max(m[0], m[1])}v${Math.min(m[0], m[1])}`;
+                return `<div id="matchup-${key}" class="matchup-section">
+                    <h3>Depth ${Math.max(m[0], m[1])} (<span class='x-cell'>X</span>) vs Depth ${Math.min(m[0], m[1])} (<span class='o-cell'>O</span>)</h3>
+                    <div class="loading-spinner">Loading...</div>
+                </div>`;
+            }).join('');
             try {
                 simulationData = await runSimulationSuite_AIvsAI();
-                // Render each matchup as its own section
                 matchupResultsDiv.innerHTML = '';
                 const sortedKeys = Object.keys(simulationData).sort((a, b) => {
                     const depthA = parseInt(a.split('v')[0]);
@@ -56,7 +66,7 @@
                     const matchupId = `matchup-${key}`;
                     let sectionHTML = `
                       <div class="matchup-section" id="${matchupId}" style="margin-bottom: 2em;">
-                        <h3>Depth ${res.depthHigh} vs Depth ${res.depthLow}</h3>
+                        <h3>Depth ${res.depthHigh} (<span class='x-cell'>X</span>) vs Depth ${res.depthLow} (<span class='o-cell'>O</span>)</h3>
                         <table border="1" cellpadding="5" cellspacing="0" style="border-collapse: collapse; margin-top: 10px; text-align: center;">
                             <thead>
                                 <tr>
@@ -126,8 +136,8 @@
             }
             const log = simulationData[matchupKey].gameLogs[gameIndex];
             const matchupInfo = simulationData[matchupKey];
-            const title = `AI vs AI Log: Depth ${matchupInfo.depthHigh} vs Depth ${matchupInfo.depthLow} (Game ${gameIndex + 1})`;
-            let logHTML = `<h3>${title}</h3>`;
+            const title = `AI vs AI Log: Depth ${matchupInfo.depthHigh} (<span class='x-cell'>X</span>) vs Depth ${matchupInfo.depthLow} (<span class='o-cell'>O</span>) (Game ${gameIndex + 1})`;
+            let logHTML = `<div class="log-note">For step-by-step play, open the browser console.</div><h3>${title}</h3>`;
             let winnerPiece = null;
             log.forEach(entry => {
                 logHTML += `<p><strong>Move ${entry.moveNum}:</strong> ${entry.player} in column ${entry.col}</p>`;
@@ -135,8 +145,12 @@
                     logHTML += `<p style="color: red;">Error: ${entry.message || 'Unknown error'}</p>`;
                 }
                 let boardStr = entry.board.map(row =>
-                    "  " + row.map(cell => cell === EMPTY ? '.' : (cell === PLAYER_PIECE ? 'X' : 'O')).join(' ')
-                ).join('\n');
+                    "  " + row.map(cell =>
+                        cell === EMPTY ? '.' :
+                        cell === PLAYER_PIECE ? '<span class="x-cell">X</span>' :
+                        '<span class="o-cell">O</span>'
+                    ).join(' ')
+                ).join('<br>');
                 logHTML += `<pre class="board-log">${boardStr}</pre>`;
             });
             const lastMove = log[log.length - 1];
@@ -151,9 +165,9 @@
             }
             let resultMsg = "<strong>Result:</strong> ";
             if (winnerPiece === PLAYER_PIECE) {
-                resultMsg += `Player 1 (Depth ${matchupInfo.depthHigh} or ${matchupInfo.depthLow}) wins`;
+                resultMsg += `Player 1 (<span class='x-cell'>X</span>, Depth ${matchupInfo.depthHigh}) wins`;
             } else if (winnerPiece === AI_PIECE) {
-                resultMsg += `Player 2 (Depth ${matchupInfo.depthHigh} or ${matchupInfo.depthLow}) wins`;
+                resultMsg += `Player 2 (<span class='o-cell'>O</span>, Depth ${matchupInfo.depthLow}) wins`;
             } else if (winnerPiece === null) {
                 resultMsg += 'Draw';
             } else {

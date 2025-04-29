@@ -3,10 +3,7 @@
   "name": "Connect Four: ChatGPT Entertainment",
   "version": "0.1.0",
   "description": "Play Connect Four in a modal on ChatGPT while waiting for AI responses.",
-  "permissions": [
-    "storage",
-    "scripting"
-  ],
+  "permissions": [],
   "host_permissions": [
     "https://chat.openai.com/*",
     "https://chatgpt.com/*"
